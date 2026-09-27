@@ -82,16 +82,17 @@ button:focus-visible,input:focus-visible,label.botao:focus-within{outline:3px so
   background:var(--painel);color:var(--tinta);border:2px solid var(--bronze);border-radius:12px;padding:10px 16px;text-align:center;
   font-variant-numeric:tabular-nums}
 
-#recolher{display:none}
+#pega{display:none}
 .escondido{display:none!important}
 
-/* Telemóvel: o painel passa para o fundo do ecrã e pode ser recolhido */
+/* Telemóvel: o painel passa para o fundo do ecrã e muda de altura pela pega */
 @media (max-width:700px){
-  #painel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:52%;border-radius:16px 16px 0 0;border-bottom:0;
+  #painel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:var(--altura-painel,52%);border-radius:16px 16px 0 0;border-bottom:0;
     padding-bottom:env(safe-area-inset-bottom,0px)}
-  #painel.recolhido section:not(.resultado):not(.sempre){display:none}
-  #painel.recolhido header{display:none}
-  #recolher{display:block;width:100%;border:0;background:transparent;color:var(--tinta-suave);font:inherit;font-size:13px;padding:6px 0 0;cursor:pointer}
+  /* Fica colada ao topo do painel quando o conteúdo desliza */
+  #pega{display:block;position:sticky;top:0;z-index:1;height:26px;background:var(--painel);touch-action:none;cursor:ns-resize}
+  #pega::before{content:"";position:absolute;left:50%;top:10px;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:var(--tinta-suave)}
+  #pega:focus-visible{outline:3px solid var(--vermelho);outline-offset:-3px}
   #coordenadas{bottom:auto;top:14px;right:64px}
   #estado{top:25%}
   .grande{font-size:36px}

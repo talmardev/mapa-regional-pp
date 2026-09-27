@@ -59,5 +59,8 @@ const CONFIG = Object.freeze({
   kmTerraTolerado: 80,
 
   // Zoom máximo (1 = píxeis da imagem ao tamanho real)
-  zoomMaximo: 8
+  zoomMaximo: 8,
+
+  // Altura mínima do painel no telemóvel, em fração do ecrã
+  alturaMinimaPainel: 0.12
 });

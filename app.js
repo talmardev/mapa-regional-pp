@@ -424,11 +424,40 @@ $('copiar').onclick = async () => {
   setTimeout(() => botao.textContent = 'Copiar', 1400);
 };
 
-$('recolher').onclick = () => {
-  const recolhido = $('painel').classList.toggle('recolhido');
-  $('recolher').textContent = recolhido ? 'Mostrar detalhes' : 'Esconder detalhes';
-  $('recolher').setAttribute('aria-expanded', !recolhido);
-};
+// Pega do painel no telemóvel: arrastar muda a altura, entre CONFIG.alturaMinimaPainel
+// e logo abaixo dos botões de zoom, sem passar a altura do conteúdo
+
+const painel = $('painel'), pega = $('pega');
+let arrastoPainel = null;
+const fracaoPainel = () => painel.getBoundingClientRect().height / $('palco').getBoundingClientRect().height;
+
+function mudarAlturaPainel(fracao) {
+  const palco = $('palco').getBoundingClientRect(), minimo = CONFIG.alturaMinimaPainel;
+  const abaixoDoZoom = 1 - ($('zoom').getBoundingClientRect().bottom - palco.top + 10) / palco.height;
+  const conteudo = (painel.scrollHeight + painel.offsetHeight - painel.clientHeight) / palco.height;
+  fracao = Math.max(minimo, Math.min(abaixoDoZoom, conteudo, fracao));
+  painel.style.setProperty('--altura-painel', (fracao * 100).toFixed(2) + '%');
+  pega.setAttribute('aria-valuenow', Math.round(fracao * 100));
+}
+
+pega.addEventListener('pointerdown', e => {
+  pega.setPointerCapture(e.pointerId);
+  arrastoPainel = { id: e.pointerId, y: e.clientY, fracao: fracaoPainel() };
+});
+pega.addEventListener('pointermove', e => {
+  if (!arrastoPainel || arrastoPainel.id !== e.pointerId) return;
+  mudarAlturaPainel(arrastoPainel.fracao - (e.clientY - arrastoPainel.y) / $('palco').getBoundingClientRect().height);
+});
+const largarPainel = e => { if (arrastoPainel && arrastoPainel.id === e.pointerId) arrastoPainel = null; };
+pega.addEventListener('pointerup', largarPainel);
+pega.addEventListener('pointercancel', largarPainel);
+pega.addEventListener('keydown', e => {
+  const passo = { ArrowUp: 0.05, ArrowDown: -0.05 }[e.key];
+  if (!passo) return;
+  e.preventDefault();
+  mudarAlturaPainel(fracaoPainel() + passo);
+});
+pega.setAttribute('aria-valuenow', Math.round(fracaoPainel() * 100));
 
 // Conversor: km da vida real para km do mapa
 
