@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Medidor do Mapa Regional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="palco">
+  <canvas id="mapa" aria-label="Mapa regional. Clica para marcar pontos."></canvas>
+  <div id="estado" role="status">A carregar o mapa…</div>
+  <div id="zoom">
+    <button id="zoomMais" aria-label="Aproximar">+</button>
+    <button id="zoomMenos" aria-label="Afastar">−</button>
+    <button id="zoomTudo" aria-label="Ver o mapa todo">⤢</button>
+  </div>
+  <div id="coordenadas">x –, y –</div>
+
+  <aside id="painel">
+    <button id="recolher" aria-expanded="true">Esconder detalhes</button>
+    <header>
+      <h1>Medidor do Mapa Regional</h1>
+      <p class="subtitulo" id="notaEscala"></p>
+    </header>
+    <section class="sempre">
+      <div class="segmentos" role="group" aria-label="Tipo de medição">
+        <button id="modoDist" aria-pressed="true">Distância</button>
+        <button id="modoArea" aria-pressed="false">Área</button>
+      </div>
+    </section>
+    <section class="resultado sempre">
+      <p class="grande" id="valorGrande">0<small>km</small></p>
+      <p id="valorSub">Clica no mapa para marcar o primeiro ponto.</p>
+      <div id="aviso" class="aviso escondido" role="alert"></div>
+    </section>
+    <section class="sempre">
+      <div class="linha">
+        <button class="botao" id="desfazer">Desfazer ponto</button>
+        <button class="botao" id="limpar">Limpar</button>
+        <button class="botao principal" id="copiar">Copiar</button>
+      </div>
+    </section>
+    <section id="caixaTrocos" class="escondido">
+      <h2>Troços</h2>
+      <ol class="trocos" id="trocos"></ol>
+    </section>
+    <section id="caixaViagem" class="escondido">
+      <h2>Tempo de viagem em linha reta</h2>
+      <table><tbody id="viagem"></tbody></table>
+    </section>
+    <section>
+      <h2>Converter distâncias</h2>
+      <div class="conversor">
+        <label>Km Vida Real<input id="kmVidaReal" inputmode="decimal"></label>
+        <label>Km Mapa<input id="kmMapa" inputmode="decimal"></label>
+      </div>
+    </section>
+    <section>
+      <h2>Mapa</h2>
+      <label class="botao bloco">Carregar outra edição do mapa
+        <input type="file" id="ficheiro" accept="image/*" class="ficheiro-escondido">
+      </label>
+    </section>
+  </aside>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
