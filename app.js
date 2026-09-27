@@ -2,7 +2,9 @@
 // As escalas e as caixas vêm do config.js.
 
 const tela = document.getElementById('mapa'), contexto = tela.getContext('2d');
-const imagem = new Image();
+let imagem = null;              // mapa carregado (ImageBitmap)
+let niveis = [];                // o mapa e cópias reduzidas a metade, para desenhar depressa com pouco zoom
+let carregamentos = 0;          // conta os carregamentos, para ignorar os que já foram substituídos
 let fator = 1;                  // larguraOriginal / largura da imagem carregada
 let vista = { escala: 1, x: 0, y: 0 };
 let pontos = [];                // em píxeis da imagem carregada
@@ -23,7 +25,7 @@ function redimensionar() {
   const densidade = window.devicePixelRatio || 1, ret = tela.getBoundingClientRect();
   tela.width = Math.round(ret.width * densidade); tela.height = Math.round(ret.height * densidade);
   // Se o mapa carregou antes de a janela ter tamanho, enquadra agora
-  if (imagem.naturalWidth && vista.escala <= 0) verTudo();
+  if (imagem && vista.escala <= 0) verTudo();
   else desenhar();
 }
 
@@ -31,12 +33,12 @@ function redimensionar() {
 function verTudo() {
   const ret = tela.getBoundingClientRect();
   const largo = window.innerWidth > 700;
-  const larguraPainel = largo ? 360 : 0, alturaPainel = largo ? 0 : ret.height * 0.35;
+  const larguraPainel = largo ? 360 : 0, alturaPainel = largo ? 0 : $('painel').getBoundingClientRect().height;
   const larguraLivre = ret.width - larguraPainel - 20, alturaLivre = ret.height - alturaPainel - 20;
-  vista.escala = Math.min(larguraLivre / imagem.naturalWidth, alturaLivre / imagem.naturalHeight);
+  vista.escala = Math.min(larguraLivre / imagem.width, alturaLivre / imagem.height);
   escalaMinima = vista.escala * 0.5;
-  vista.x = larguraPainel + 10 + (larguraLivre - imagem.naturalWidth * vista.escala) / 2;
-  vista.y = 10 + (alturaLivre - imagem.naturalHeight * vista.escala) / 2;
+  vista.x = larguraPainel + 10 + (larguraLivre - imagem.width * vista.escala) / 2;
+  vista.y = 10 + (alturaLivre - imagem.height * vista.escala) / 2;
   desenhar();
 }
 
@@ -47,18 +49,36 @@ function zoomEm(ex, ey, f) {
   const nova = Math.max(escalaMinima, Math.min(CONFIG.zoomMaximo, vista.escala * f));
   const p = paraImagem(ex, ey);
   vista.escala = nova; vista.x = ex - p.x * nova; vista.y = ey - p.y * nova;
-  desenhar();
+  pedirDesenho();
+}
+
+// Junta os pedidos de desenho num só por fotograma
+let desenhoPendente = false;
+function pedirDesenho() {
+  if (desenhoPendente) return;
+  desenhoPendente = true;
+  requestAnimationFrame(() => { desenhoPendente = false; desenhar(); });
 }
 
 function desenhar() {
   const densidade = window.devicePixelRatio || 1;
   contexto.setTransform(1, 0, 0, 1, 0, 0);
   contexto.clearRect(0, 0, tela.width, tela.height);
-  if (!imagem.naturalWidth) return;
+  if (!imagem) return;
+
+  // Cópia mais pequena que ainda tenha pelo menos um píxel por píxel do ecrã
+  let nivel = niveis[0];
+  for (const n of niveis) if (n.width / imagem.width >= densidade * vista.escala) nivel = n;
+  const rx = nivel.width / imagem.width, ry = nivel.height / imagem.height;
+  // Só a parte visível, em píxeis da cópia escolhida
+  const larguraEcra = tela.width / densidade, alturaEcra = tela.height / densidade;
+  const x0 = Math.max(0, Math.floor(-vista.x / vista.escala * rx)), y0 = Math.max(0, Math.floor(-vista.y / vista.escala * ry));
+  const x1 = Math.min(nivel.width, Math.ceil((larguraEcra - vista.x) / vista.escala * rx));
+  const y1 = Math.min(nivel.height, Math.ceil((alturaEcra - vista.y) / vista.escala * ry));
   contexto.setTransform(densidade * vista.escala, 0, 0, densidade * vista.escala, densidade * vista.x, densidade * vista.y);
   contexto.imageSmoothingEnabled = vista.escala < 2;
   contexto.imageSmoothingQuality = 'high';
-  contexto.drawImage(imagem, 0, 0);
+  if (x1 > x0 && y1 > y0) contexto.drawImage(nivel, x0, y0, x1 - x0, y1 - y0, x0 / rx, y0 / ry, (x1 - x0) / rx, (y1 - y0) / ry);
   contexto.setTransform(densidade, 0, 0, densidade, 0, 0);
   if (!pontos.length) return;
 
@@ -118,7 +138,7 @@ const kmTroco = (a, b) => Math.hypot(b.x - a.x, b.y - a.y) * CONFIG.kmPorPixel *
 
 // Caixa onde está o ponto, ou null se estiver no continente
 function caixaDoPonto(p) {
-  const fx = imagem.naturalWidth / CONFIG.larguraOriginal, fy = imagem.naturalHeight / CONFIG.alturaOriginal;
+  const fx = imagem.width / CONFIG.larguraOriginal, fy = imagem.height / CONFIG.alturaOriginal;
   return CONFIG.caixas.find(c => p.x >= c.x * fx && p.x <= (c.x + c.largura) * fx
     && p.y >= c.y * fy && p.y <= (c.y + c.altura) * fy) || null;
 }
@@ -139,8 +159,8 @@ function zonaPermitida(p, ignorar) {
 // Máscara do mar pela cor dos píxeis. A imagem é reduzida para não passar
 // o limite de tamanho dos canvas nos telemóveis.
 function criarMascaraMar() {
-  const reducao = Math.min(1, Math.sqrt(8e6 / (imagem.naturalWidth * imagem.naturalHeight)));
-  const largura = Math.round(imagem.naturalWidth * reducao), altura = Math.round(imagem.naturalHeight * reducao);
+  const reducao = Math.min(1, Math.sqrt(8e6 / (imagem.width * imagem.height)));
+  const largura = Math.round(imagem.width * reducao), altura = Math.round(imagem.height * reducao);
   const auxiliar = document.createElement('canvas');
   auxiliar.width = largura; auxiliar.height = altura;
   const ctx = auxiliar.getContext('2d', { willReadFrequently: true });
@@ -256,7 +276,7 @@ function atualizar() {
   $('caixaViagem').classList.toggle('escondido', !comViagem);
   emTerra = comViagem && grupo.porMar ? trocosEmTerra() : [];
   $('avisoMar').classList.toggle('escondido', !emTerra.length);
-  desenhar();
+  pedirDesenho();
 }
 
 // Interação com o rato e o toque
@@ -264,10 +284,10 @@ function atualizar() {
 const ponteiros = new Map();
 let arrasto = null, pinca = null;
 
-function pontoTocado(ex, ey) {
+function pontoTocado(ex, ey, raio) {
   for (let i = pontos.length - 1; i >= 0; i--) {
     const p = paraEcra(pontos[i]);
-    if (Math.hypot(p.x - ex, p.y - ey) < 12) return i;
+    if (Math.hypot(p.x - ex, p.y - ey) < raio) return i;
   }
   return -1;
 }
@@ -287,13 +307,16 @@ tela.addEventListener('pointerdown', e => {
     arrasto = null;
     return;
   }
-  arrasto = { ex: p.x, ey: p.y, vistaX: vista.x, vistaY: vista.y, moveu: false, ponto: pontoTocado(p.x, p.y), id: e.pointerId };
+  // O dedo tapa mais e treme mais do que o rato: área maior para agarrar pontos e folga maior antes de arrastar
+  const toque = e.pointerType === 'touch';
+  arrasto = { ex: p.x, ey: p.y, vistaX: vista.x, vistaY: vista.y, moveu: false, ponto: pontoTocado(p.x, p.y, toque ? 24 : 12),
+    folga: toque ? 10 : 4, id: e.pointerId };
 });
 
 tela.addEventListener('pointermove', e => {
   const p = posicao(e);
   const naImagem = paraImagem(p.x, p.y);
-  if (imagem.naturalWidth && naImagem.x >= 0 && naImagem.y >= 0 && naImagem.x <= imagem.naturalWidth && naImagem.y <= imagem.naturalHeight)
+  if (imagem && naImagem.x >= 0 && naImagem.y >= 0 && naImagem.x <= imagem.width && naImagem.y <= imagem.height)
     $('coordenadas').textContent = 'x ' + Math.round(naImagem.x) + ', y ' + Math.round(naImagem.y);
   if (!ponteiros.has(e.pointerId)) return;
   ponteiros.set(e.pointerId, p);
@@ -304,13 +327,13 @@ tela.addEventListener('pointermove', e => {
     vista.escala = Math.max(escalaMinima, Math.min(CONFIG.zoomMaximo, pinca.escala0 * Math.hypot(a.x - b.x, a.y - b.y) / pinca.distancia0));
     vista.x = meio.x - pinca.ancora.x * vista.escala;
     vista.y = meio.y - pinca.ancora.y * vista.escala;
-    desenhar();
+    pedirDesenho();
     return;
   }
 
   if (!arrasto || arrasto.id !== e.pointerId) return;
   const dx = p.x - arrasto.ex, dy = p.y - arrasto.ey;
-  if (!arrasto.moveu && Math.hypot(dx, dy) > 4) arrasto.moveu = true;
+  if (!arrasto.moveu && Math.hypot(dx, dy) > arrasto.folga) arrasto.moveu = true;
   if (!arrasto.moveu) return;
   if (arrasto.ponto >= 0) {
     // O ponto só acompanha o cursor enquanto ficar na mesma zona dos outros
@@ -320,7 +343,7 @@ tela.addEventListener('pointermove', e => {
   } else {
     tela.classList.add('a-mover');
     vista.x = arrasto.vistaX + dx; vista.y = arrasto.vistaY + dy;
-    desenhar();
+    pedirDesenho();
   }
 });
 
@@ -425,26 +448,76 @@ function escreverEscala() {
   $('notaEscala').textContent = '1 pixel = ' + formatoDecimal.format(CONFIG.kmPorPixel * fator) + 'km';
 }
 
+function mostrarEstado(texto) {
+  $('estado').textContent = texto;
+  $('estado').classList.remove('escondido');
+}
+
+// Descarrega o mapa e vai indicando a percentagem, porque no telemóvel pode demorar
+async function descarregar(url, aoAvancar) {
+  const resposta = await fetch(url);
+  if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
+  const total = Number(resposta.headers.get('Content-Length'));
+  if (!total || !resposta.body) return resposta.blob();
+  const leitor = resposta.body.getReader(), partes = [];
+  let recebidos = 0;
+  for (;;) {
+    const { done, value } = await leitor.read();
+    if (done) break;
+    partes.push(value); recebidos += value.length;
+    aoAvancar(Math.min(99, Math.floor(recebidos / total * 100)));
+  }
+  return new Blob(partes);
+}
+
+// Cópias do mapa reduzidas a metade até uns 1000 px. Com pouco zoom desenha-se
+// uma cópia pequena em vez de reduzir a imagem inteira a cada movimento.
+async function criarNiveis(base) {
+  const lista = [base];
+  let anterior = base;
+  while (Math.max(anterior.width, anterior.height) > 1024) {
+    const auxiliar = document.createElement('canvas');
+    auxiliar.width = Math.ceil(anterior.width / 2); auxiliar.height = Math.ceil(anterior.height / 2);
+    const contextoAuxiliar = auxiliar.getContext('2d');
+    contextoAuxiliar.imageSmoothingQuality = 'high';
+    contextoAuxiliar.drawImage(anterior, 0, 0, auxiliar.width, auxiliar.height);
+    anterior = await createImageBitmap(auxiliar);
+    auxiliar.width = auxiliar.height = 0;
+    lista.push(anterior);
+  }
+  return lista;
+}
+
+// Abre o mapa a partir de um endereço ou de um ficheiro escolhido.
+// O createImageBitmap descodifica a imagem sem prender a página.
+async function abrirMapa(origem) {
+  const este = ++carregamentos, atual = () => este === carregamentos;
+  try {
+    const blob = typeof origem === 'string'
+      ? await descarregar(origem, pct => { if (atual()) mostrarEstado('A carregar o mapa… ' + pct + '%'); })
+      : origem;
+    if (!atual()) return;
+    mostrarEstado('A preparar o mapa…');
+    const novosNiveis = await criarNiveis(await createImageBitmap(blob));
+    if (!atual()) { novosNiveis.forEach(n => n.close()); return; }
+    niveis.forEach(n => n.close());
+    niveis = novosNiveis; imagem = niveis[0];
+    fator = CONFIG.larguraOriginal / imagem.width;
+    mascaraMar = null;
+    escreverEscala();
+    $('estado').classList.add('escondido');
+    pontos = []; avisoZona = '';
+    verTudo();
+    atualizar();
+  } catch {
+    if (atual()) mostrarEstado('Não foi possível abrir o mapa. Usa "Carregar outra edição do mapa" no painel.');
+  }
+}
+
 $('ficheiro').addEventListener('change', e => {
   const ficheiro = e.target.files[0];
-  if (!ficheiro) return;
-  const leitor = new FileReader();
-  leitor.onload = () => { imagem.src = leitor.result; };
-  leitor.readAsDataURL(ficheiro);
+  if (ficheiro) abrirMapa(ficheiro);
 });
-imagem.onload = () => {
-  fator = CONFIG.larguraOriginal / imagem.naturalWidth;
-  mascaraMar = null;
-  escreverEscala();
-  $('estado').classList.add('escondido');
-  pontos = []; avisoZona = '';
-  verTudo();
-  atualizar();
-};
-imagem.onerror = () => {
-  $('estado').textContent = 'Não foi possível abrir o mapa. Usa "Carregar outra edição do mapa" no painel.';
-  $('estado').classList.remove('escondido');
-};
 
 // Textos do painel que dependem do config.js
 $('kmVidaReal').placeholder = '300';
@@ -452,5 +525,7 @@ $('kmMapa').placeholder = formatoInteiro.format(300 * CONFIG.fatorVidaReal);
 escreverEscala();
 
 window.addEventListener('resize', redimensionar);
+// Se o navegador apagar a tela (por exemplo com a aba em segundo plano), volta a desenhar
+tela.addEventListener('contextrestored', desenhar);
 redimensionar();
-imagem.src = CONFIG.ficheiroMapa;
+abrirMapa(CONFIG.ficheiroMapa);

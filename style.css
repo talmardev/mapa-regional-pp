@@ -10,7 +10,7 @@
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 *,*::before,*::after{box-sizing:inherit}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-tap-highlight-color:transparent}
 body{height:100%;margin:0;background:var(--mar);color:var(--tinta);
   font-family:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;overflow:hidden}
 
@@ -20,7 +20,10 @@ canvas.a-mover{cursor:grabbing}
 
 #painel{position:absolute;top:14px;left:14px;width:330px;max-height:calc(100% - 28px);overflow:auto;
   background:var(--painel);border:2px solid var(--bronze);border-radius:14px;
-  box-shadow:0 0 0 5px color-mix(in srgb,var(--bronze) 35%,transparent),0 12px 30px rgba(0,0,0,.35)}
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--bronze) 35%,transparent),0 12px 30px rgba(0,0,0,.35);
+  overscroll-behavior:contain}
+/* Sem zoom da página ao tocar duas vezes num botão */
+#painel,#zoom{touch-action:manipulation}
 header{padding:16px 18px 12px;border-bottom:1px solid var(--linha);text-align:center}
 h1{font-family:"IM Fell English SC",Georgia,"Times New Roman",serif;font-weight:400;font-size:27px;line-height:1.05;margin:0;letter-spacing:.02em}
 .subtitulo{margin:6px 0 0;color:var(--tinta-suave);font-size:13.5px}
@@ -76,7 +79,8 @@ button:focus-visible,input:focus-visible,label.botao:focus-within{outline:3px so
 
 /* Mensagem enquanto o mapa carrega ou se falhar */
 #estado{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);max-width:calc(100% - 32px);
-  background:var(--painel);color:var(--tinta);border:2px solid var(--bronze);border-radius:12px;padding:10px 16px;text-align:center}
+  background:var(--painel);color:var(--tinta);border:2px solid var(--bronze);border-radius:12px;padding:10px 16px;text-align:center;
+  font-variant-numeric:tabular-nums}
 
 #recolher{display:none}
 .escondido{display:none!important}
@@ -91,5 +95,7 @@ button:focus-visible,input:focus-visible,label.botao:focus-within{outline:3px so
   #coordenadas{bottom:auto;top:14px;right:64px}
   #estado{top:25%}
   .grande{font-size:36px}
+  /* Abaixo de 16px o iPhone faz zoom à página ao escrever */
+  .conversor input{font-size:16px}
 }
 @media (prefers-reduced-motion:no-preference){.botao,.segmentos button{transition:background .15s}}
