@@ -9,6 +9,9 @@ let pontos = [];                // em píxeis da imagem carregada
 let modo = 'dist';
 let escalaMinima = 0.05;
 let avisoZona = '';             // aviso quando um ponto é recusado por estar noutra zona
+let grupoViagem = 0;            // índice em CONFIG.velocidades
+let emTerra = [];               // índices dos troços por mar que passam por terra
+let mascaraMar = null;          // null: por fazer; false: não deu para ler a imagem
 
 const formatoInteiro = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 0 });
 const formatoDecimal = new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -68,6 +71,16 @@ function desenhar() {
   contexto.strokeStyle = '#fff'; contexto.lineWidth = 6; contexto.stroke();
   contexto.strokeStyle = '#c8261e'; contexto.lineWidth = 3; contexto.stroke();
 
+  // Troços por mar que passam por terra, a tracejado laranja
+  if (modo === 'dist' && emTerra.length) {
+    contexto.setLineDash([10, 7]); contexto.strokeStyle = '#ff9a1f'; contexto.lineWidth = 3.5;
+    emTerra.forEach(i => {
+      contexto.beginPath(); contexto.moveTo(noEcra[i - 1].x, noEcra[i - 1].y); contexto.lineTo(noEcra[i].x, noEcra[i].y);
+      contexto.stroke();
+    });
+    contexto.setLineDash([]);
+  }
+
   // Etiquetas com os km de cada troço, só quando o troço tem espaço
   if (modo === 'dist') {
     contexto.font = '700 13px "Alegreya Sans",system-ui,sans-serif';
@@ -121,6 +134,53 @@ function zonaPermitida(p, ignorar) {
   avisoZona = 'Não dá para medir entre ' + nomeZona(zonaAtual) + ' e ' + nomeZona(zonaNova)
     + '. Os pontos têm de ficar todos na mesma zona.';
   return false;
+}
+
+// Máscara do mar pela cor dos píxeis. A imagem é reduzida para não passar
+// o limite de tamanho dos canvas nos telemóveis.
+function criarMascaraMar() {
+  const reducao = Math.min(1, Math.sqrt(8e6 / (imagem.naturalWidth * imagem.naturalHeight)));
+  const largura = Math.round(imagem.naturalWidth * reducao), altura = Math.round(imagem.naturalHeight * reducao);
+  const auxiliar = document.createElement('canvas');
+  auxiliar.width = largura; auxiliar.height = altura;
+  const ctx = auxiliar.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(imagem, 0, 0, largura, altura);
+  const dados = ctx.getImageData(0, 0, largura, altura).data, m = CONFIG.mar;
+  const mar = new Uint8Array(largura * altura);
+  for (let i = 0; i < mar.length; i++) {
+    const r = dados[i * 4], g = dados[i * 4 + 1], b = dados[i * 4 + 2];
+    mar[i] = r <= m.vermelhoMax && g >= m.verde[0] && g <= m.verde[1]
+      && b >= m.azul[0] && b <= m.azul[1] && b - r >= m.azulMenosVermelho ? 1 : 0;
+  }
+  return { mar, largura, altura, reducao };
+}
+
+// Troços com mais terra seguida do que CONFIG.kmTerraTolerado
+function trocosEmTerra() {
+  if (mascaraMar === null) {
+    try { mascaraMar = criarMascaraMar(); } catch { mascaraMar = false; }
+  }
+  if (!mascaraMar) return [];
+  const { mar, largura, altura, reducao } = mascaraMar;
+  const kmPorPasso = CONFIG.kmPorPixel * fator / reducao, resultado = [];
+  for (let i = 1; i < pontos.length; i++) {
+    const a = pontos[i - 1], b = pontos[i];
+    const passos = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) * reducao);
+    let seguidos = 0;
+    for (let s = 0; s <= passos; s++) {
+      const f = passos ? s / passos : 0;
+      const x = Math.round((a.x + (b.x - a.x) * f) * reducao), y = Math.round((a.y + (b.y - a.y) * f) * reducao);
+      const eMar = x >= 0 && y >= 0 && x < largura && y < altura && mar[y * largura + x];
+      seguidos = eMar ? 0 : seguidos + 1;
+      if (seguidos * kmPorPasso > CONFIG.kmTerraTolerado) { resultado.push(i); break; }
+    }
+  }
+  return resultado;
+}
+
+function formatarDias(dias) {
+  dias = Math.ceil(dias);
+  return formatoInteiro.format(dias) + (dias === 1 ? ' dia' : ' dias');
 }
 
 function formatarTempo(h) {
@@ -181,23 +241,21 @@ function atualizar() {
   $('caixaTrocos').classList.toggle('escondido', !comTrocos);
 
   const comViagem = modo === 'dist' && pontos.length > 1;
+  const grupo = CONFIG.velocidades[grupoViagem];
   const viagem = $('viagem');
   viagem.innerHTML = '';
   if (comViagem) {
-    CONFIG.velocidades.forEach(v => {
-      let rotulo, tempo;
-      if (v.kmh) {
-        rotulo = v.nome + ' (' + formatoInteiro.format(v.kmh) + ' km/h)';
-        tempo = formatarTempo(t.comprimento / v.kmh);
-      } else {
-        const dias = Math.ceil(t.comprimento / v.kmDia);
-        rotulo = v.nome + ' (' + formatoInteiro.format(v.kmDia) + ' km por dia)';
-        tempo = formatoInteiro.format(dias) + (dias === 1 ? ' dia' : ' dias');
-      }
-      viagem.insertAdjacentHTML('beforeend', '<tr><td>' + rotulo + '</td><td>' + tempo + '</td></tr>');
+    grupo.meios.forEach(v => {
+      const valores = v.kmh || v.kmDia;
+      const velocidade = valores.map(x => formatoInteiro.format(x)).join(' / ') + (v.kmh ? ' km/h' : ' km por dia');
+      const tempos = valores.map(x => v.kmh ? formatarTempo(t.comprimento / x) : formatarDias(t.comprimento / x));
+      viagem.insertAdjacentHTML('beforeend', '<tr><td>' + v.nome + '<small>' + velocidade + '</small></td><td>'
+        + tempos[0] + '</td><td>' + (tempos[1] || '–') + '</td></tr>');
     });
   }
   $('caixaViagem').classList.toggle('escondido', !comViagem);
+  emTerra = comViagem && grupo.porMar ? trocosEmTerra() : [];
+  $('avisoMar').classList.toggle('escondido', !emTerra.length);
   desenhar();
 }
 
@@ -309,6 +367,19 @@ function definirModo(m) {
 $('modoDist').onclick = () => definirModo('dist');
 $('modoArea').onclick = () => definirModo('area');
 
+// Botões dos grupos do tempo de viagem, a partir do config.js
+CONFIG.velocidades.forEach((g, i) => {
+  const botao = document.createElement('button');
+  botao.textContent = g.grupo;
+  botao.setAttribute('aria-pressed', i === grupoViagem);
+  botao.onclick = () => {
+    grupoViagem = i;
+    [...$('gruposViagem').children].forEach((b, j) => b.setAttribute('aria-pressed', j === i));
+    atualizar();
+  };
+  $('gruposViagem').appendChild(botao);
+});
+
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === 'Backspace' || (e.key === 'z' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); desfazer(); }
@@ -363,6 +434,7 @@ $('ficheiro').addEventListener('change', e => {
 });
 imagem.onload = () => {
   fator = CONFIG.larguraOriginal / imagem.naturalWidth;
+  mascaraMar = null;
   escreverEscala();
   $('estado').classList.add('escondido');
   pontos = []; avisoZona = '';

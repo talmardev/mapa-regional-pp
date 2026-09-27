@@ -29,7 +29,7 @@ section:last-child{border-bottom:0}
 h2{font-size:14px;font-weight:800;margin:0 0 8px;color:var(--bronze-escuro)}
 
 /* Botões segmentados do modo de medição */
-.segmentos{display:grid;grid-template-columns:1fr 1fr;background:var(--campo);border:1px solid var(--linha);border-radius:999px;padding:3px}
+.segmentos{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--campo);border:1px solid var(--linha);border-radius:999px;padding:3px}
 .segmentos button{border:0;background:transparent;color:var(--tinta);font:inherit;font-weight:700;padding:7px 0;border-radius:999px;cursor:pointer}
 .segmentos button[aria-pressed="true"]{background:var(--bronze-escuro);color:#231b13}
 
@@ -44,6 +44,14 @@ ol.trocos li::marker{color:var(--tinta-suave)}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 td{padding:3px 0}
 td:last-child{text-align:right;font-weight:700}
+
+/* Tempo de viagem: nome e velocidades, depois cruzeiro e máxima */
+#gruposViagem{margin-bottom:10px}
+#avisoMar{margin:0 0 10px}
+table.viagem th{font-size:12.5px;font-weight:700;color:var(--tinta-suave);text-align:right;padding:0 0 2px}
+table.viagem td{vertical-align:top;padding:4px 0}
+table.viagem td+td{text-align:right;font-weight:700;white-space:nowrap;padding-left:8px}
+table.viagem td small{display:block;font-size:12.5px;color:var(--tinta-suave)}
 
 .linha{display:flex;gap:8px;flex-wrap:wrap}
 .botao{flex:1 1 auto;border:1px solid var(--bronze);background:var(--campo);color:var(--tinta);font:inherit;font-weight:700;

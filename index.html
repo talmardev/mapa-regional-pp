@@ -49,8 +49,13 @@
       <ol class="trocos" id="trocos"></ol>
     </section>
     <section id="caixaViagem" class="escondido">
-      <h2>Tempo de viagem em linha reta</h2>
-      <table><tbody id="viagem"></tbody></table>
+      <h2>Tempo de Viagem</h2>
+      <div class="segmentos" id="gruposViagem" role="group" aria-label="Grupo de meios"></div>
+      <div id="avisoMar" class="aviso escondido" role="status">O percurso passa por terra. Marca o percurso por mar com vários pontos.</div>
+      <table class="viagem">
+        <thead><tr><th></th><th>Cruzeiro</th><th>Máxima</th></tr></thead>
+        <tbody id="viagem"></tbody>
+      </table>
     </section>
     <section>
       <h2>Converter distâncias</h2>
