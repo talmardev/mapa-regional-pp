@@ -247,19 +247,6 @@ function atualizar() {
   $('aviso').textContent = avisoZona;
   $('aviso').classList.toggle('escondido', !avisoZona);
 
-  const comTrocos = modo === 'dist' && pontos.length > 2;
-  const trocos = $('trocos');
-  trocos.innerHTML = '';
-  if (comTrocos) {
-    for (let i = 1; i < pontos.length; i++) {
-      const item = document.createElement('li');
-      item.innerHTML = '<span>Ponto ' + i + ' → ' + (i + 1) + '</span><span>'
-        + formatoInteiro.format(kmTroco(pontos[i - 1], pontos[i])) + ' km</span>';
-      trocos.appendChild(item);
-    }
-  }
-  $('caixaTrocos').classList.toggle('escondido', !comTrocos);
-
   const comViagem = modo === 'dist' && pontos.length > 1;
   const grupo = CONFIG.velocidades[grupoViagem];
   const viagem = $('viagem');

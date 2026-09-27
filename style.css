@@ -41,9 +41,6 @@ h2{font-size:14px;font-weight:800;margin:0 0 8px;color:var(--bronze-escuro)}
 .grande small{font-size:22px;margin-left:4px}
 .resultado p{margin:6px 0 0;color:var(--tinta-suave);font-size:13.5px}
 
-ol.trocos{margin:0;padding:0 0 0 20px;font-variant-numeric:tabular-nums}
-ol.trocos li{display:flex;justify-content:space-between;gap:8px}
-ol.trocos li::marker{color:var(--tinta-suave)}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 td{padding:3px 0}
 td:last-child{text-align:right;font-weight:700}
