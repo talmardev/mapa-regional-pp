@@ -1,4 +1,4 @@
-// Medidor do Mapa Regional: mapa, medições e conversor.
+// Mapa Regional++: mapa, medições e conversor.
 // As escalas e as caixas vêm do config.js.
 
 const tela = document.getElementById('mapa'), contexto = tela.getContext('2d');

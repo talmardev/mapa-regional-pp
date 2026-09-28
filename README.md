@@ -2,7 +2,7 @@
 
 Ferramenta para medir distâncias, áreas e tempos de viagem no Mapa Regional, no navegador do computador ou do telemóvel.
 
-**[Abrir o Mapa Regional++](LINK_DO_SITE)**
+**[Abrir o Mapa Regional++](https://talmardev.github.io/mapa-regional-pp/)**
 
 ![O Mapa Regional++ no computador, com o mapa todo à vista](media/homepage_pc.png)
 
@@ -95,4 +95,3 @@ O código tem licença [MIT](LICENSE). A licença cobre só o código: o mapa, a
 <a href="https://www.nationstates.net/page=dispatch/id=861852"><picture><source media="(prefers-color-scheme: dark)" srcset="media/drcartogarifa_escuro.png"><img src="media/drcartogarifa.png" width="394" alt="Departamento Regional de Cartografia"></picture></a>
 <p>Esta ferramenta foi desenvolvida por <a href="https://www.nationstates.net/nation=new_libertalia_kingdom"><b>New Libertalia Kingdom</b></a> com base no mapa mantido pelo nosso querido cartógrafo regional <a href="https://www.nationstates.net/nation=alentejo_and_algarve"><b>Alentejo and Algarve</b></a>.</p>
 </td></tr></table>
-

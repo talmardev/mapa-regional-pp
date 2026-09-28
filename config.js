@@ -1,4 +1,4 @@
-// Configuração do Medidor do Mapa Regional.
+// Configuração do Mapa Regional++.
 // Escalas, caixas e velocidades ficam todas aqui.
 
 const CONFIG = Object.freeze({
