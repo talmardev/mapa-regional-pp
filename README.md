@@ -22,7 +22,7 @@ O total aparece no painel e os km de cada troço aparecem nas etiquetas do mapa.
 
 No grupo **Mar**, marca o percurso pela água com vários pontos, a contornar a costa. Se um troço atravessar terra, o painel avisa e esse troço fica a tracejado laranja no mapa.
 
-![Percurso por mar marcado com vários pontos, com os tempos de viagem dos navios](media/caminhomar.png)
+![Percurso por mar de Odeceixe a Saudoso, marcado com vários pontos a contornar a costa](media/caminhomar.png)
 
 ### Medir uma área
 
