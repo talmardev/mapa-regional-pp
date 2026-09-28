@@ -3,7 +3,7 @@
 :root{
   --mar:#2f4460; --painel:#231b13; --tinta:#f2e6cc; --tinta-suave:#bca783;
   --bronze:#d4a868; --bronze-escuro:#e0b777; --linha:#4a3a28; --vermelho:#c8261e; --campo:#2f2419;
-  --aviso-fundo:#4a2a10; --aviso-tinta:#ffd2a6;
+  --aviso-fundo:#4a2a10; --aviso-tinta:#ffd2a6; --pergaminho:#f7eed9; --tinta-pergaminho:#2b2117;
   color-scheme:dark;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -60,7 +60,7 @@ table.viagem td small{display:block;font-size:12.5px;color:var(--tinta-suave)}
 .botao.principal{background:var(--bronze-escuro);border-color:var(--bronze-escuro);color:#231b13}
 .botao.bloco{display:block;text-align:center}
 .ficheiro-escondido{position:absolute;opacity:0;width:1px;height:1px}
-button:focus-visible,input:focus-visible,label.botao:focus-within{outline:3px solid var(--vermelho);outline-offset:2px}
+button:focus-visible,input:focus-visible,label.botao:focus-within,a:focus-visible{outline:3px solid var(--vermelho);outline-offset:2px}
 
 .aviso{background:var(--aviso-fundo);color:var(--aviso-tinta);border-radius:9px;padding:8px 10px;font-size:14px;margin:10px 0 0}
 
@@ -79,6 +79,24 @@ button:focus-visible,input:focus-visible,label.botao:focus-within{outline:3px so
   background:var(--painel);color:var(--tinta);border:2px solid var(--bronze);border-radius:12px;padding:10px 16px;text-align:center;
   font-variant-numeric:tabular-nums}
 
+/* Notificação dos créditos, no canto inferior direito. Cor de pergaminho, porque o logo tem letras pretas.
+   Medidas em em: o font-size define o tamanho de tudo. Em ecrãs baixos não passa 3/4 da altura
+   e, se não houver espaço à direita do mapa, o app.js encolhe-a. */
+.creditos{position:absolute;right:14px;bottom:14px;z-index:2;font-size:min(27px,3.7vh);width:19em;max-width:calc(100% - 28px);
+  padding:.89em 1.04em .96em;background:var(--pergaminho);color:var(--tinta-pergaminho);
+  border:.15em solid var(--bronze);border-radius:1.04em;
+  box-shadow:0 0 0 .37em color-mix(in srgb,var(--bronze) 35%,transparent),0 .89em 2.2em rgba(0,0,0,.35);
+  text-align:center;line-height:1.4;
+  /* Tocar e segurar só segura a notificação: sem deslizar, menu nem seleção de texto */
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.creditos a{color:var(--vermelho);font-weight:700}
+.creditos img{display:block;-webkit-user-drag:none}
+.creditos .bandeiras{display:flex;justify-content:center;gap:.59em}
+.creditos .bandeiras img{height:4.74em;width:auto;border-radius:.22em;box-shadow:0 .07em .22em rgba(43,33,23,.4)}
+.creditos .logo{display:block;width:14.6em;max-width:100%;margin:.74em auto 0}
+.creditos .logo img{width:100%;height:auto}
+.creditos p{margin:.59em 0 0}
+
 #pega{display:none}
 .escondido{display:none!important}
 
@@ -92,6 +110,15 @@ button:focus-visible,input:focus-visible,label.botao:focus-within{outline:3px so
   #pega:focus-visible{outline:3px solid var(--vermelho);outline-offset:-3px}
   #coordenadas{bottom:auto;top:14px;right:64px}
   #estado{top:25%}
+  /* Créditos com a largura toda, por cima do painel: bandeiras e logo numa linha e o texto por baixo,
+     meio por meio. As colunas seguem a largura/altura de cada imagem, para ficarem todas da mesma altura. */
+  .creditos{left:10px;right:10px;bottom:30px;width:auto;max-width:none;font-size:min(14px,2.4vh);
+    display:grid;grid-template-columns:minmax(0,1.426fr) minmax(0,1.5fr) minmax(0,2.224fr);grid-template-rows:1fr 1fr;
+    gap:.6em .55em;align-items:center}
+  .creditos .bandeiras{display:contents}
+  .creditos .bandeiras img{width:100%;height:auto}
+  .creditos .logo{width:auto;margin:0}
+  .creditos p{grid-column:1 / -1;margin:0}
   .grande{font-size:36px}
   /* Abaixo de 16px o iPhone faz zoom à página ao escrever */
   .conversor input{font-size:16px}

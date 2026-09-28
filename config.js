@@ -2,8 +2,10 @@
 // Escalas, caixas e velocidades ficam todas aqui.
 
 const CONFIG = Object.freeze({
-  // Mapa aberto por omissão
-  ficheiroMapa: 'mapa.jpg',
+  // Mapa aberto por omissão: o ficheiro "mapa" da pasta media, com a primeira
+  // destas extensões que existir (experimenta-as também em maiúsculas)
+  ficheiroMapa: 'media/mapa',
+  extensoesMapa: ['jpg', 'jpeg', 'png', 'webp', 'avif', 'jfif'],
 
   // Dimensões da imagem original exportada do PSD, em píxeis
   larguraOriginal: 3372,
@@ -62,5 +64,13 @@ const CONFIG = Object.freeze({
   zoomMaximo: 8,
 
   // Altura mínima do painel no telemóvel, em fração do ecrã
-  alturaMinimaPainel: 0.12
+  alturaMinimaPainel: 0.12,
+
+  // Notificação dos créditos ao abrir o site: probabilidade no computador (mais de 700px de largura)
+  // e no telemóvel, segundos a entrar ou sair e parada. Com o rato por cima ou o dedo a tocar fica;
+  // sai segundosDepoisDeLargar depois de a largarem, nunca antes de acabar o tempo parada.
+  creditos: {
+    probabilidadeComputador: 1, probabilidadeTelemovel: 1,
+    segundosAnimacao: 0.2, segundosParada: 3, segundosDepoisDeLargar: 1
+  }
 });

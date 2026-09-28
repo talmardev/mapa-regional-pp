@@ -29,17 +29,35 @@ function redimensionar() {
   else desenhar();
 }
 
-// Enquadra o mapa todo, deixando espaço para o painel
-function verTudo() {
+// Vista que enquadra um mapa com estas dimensões, deixando espaço para o painel. No computador o mapa
+// fica centrado entre o painel e o sítio da notificação dos créditos; se não couber, encosta ao painel.
+function enquadramento(largura, altura) {
   const ret = tela.getBoundingClientRect();
   const largo = window.innerWidth > 700;
   const larguraPainel = largo ? 360 : 0, alturaPainel = largo ? 0 : $('painel').getBoundingClientRect().height;
   const larguraLivre = ret.width - larguraPainel - 20, alturaLivre = ret.height - alturaPainel - 20;
-  vista.escala = Math.min(larguraLivre / imagem.width, alturaLivre / imagem.height);
+  const escala = Math.min(larguraLivre / largura, alturaLivre / altura);
+  const inicio = larguraPainel + 10, fim = ret.width - (largo ? larguraCreditos() + 14 + 20 : 10);
+  const x = Math.max(inicio, inicio + (fim - inicio - largura * escala) / 2);
+  return { escala, x, y: 10 + (alturaLivre - altura * escala) / 2 };
+}
+
+// Enquadra o mapa todo
+function verTudo() {
+  Object.assign(vista, enquadramento(imagem.width, imagem.height));
   escalaMinima = vista.escala * 0.5;
-  vista.x = larguraPainel + 10 + (larguraLivre - imagem.width * vista.escala) / 2;
-  vista.y = 10 + (alturaLivre - imagem.height * vista.escala) / 2;
   desenhar();
+}
+
+// Largura da notificação dos créditos no computador, lida do style.css
+function larguraCreditos() {
+  const sonda = document.createElement('div');
+  sonda.className = 'creditos';
+  sonda.style.visibility = 'hidden';
+  $('palco').appendChild(sonda);
+  const largura = sonda.offsetWidth;
+  sonda.remove();
+  return largura;
 }
 
 const paraEcra = p => ({ x: p.x * vista.escala + vista.x, y: p.y * vista.escala + vista.y });
@@ -469,9 +487,15 @@ function mostrarEstado(texto) {
   $('estado').classList.remove('escondido');
 }
 
-// Descarrega o mapa e vai indicando a percentagem, porque no telemóvel pode demorar
-async function descarregar(url, aoAvancar) {
-  const resposta = await fetch(url);
+// Descarrega o mapa e vai indicando a percentagem, porque no telemóvel pode demorar.
+// Experimenta as extensões do config.js por ordem, primeiro em minúsculas.
+async function descarregarMapa(aoAvancar) {
+  const extensoes = [...CONFIG.extensoesMapa, ...CONFIG.extensoesMapa.map(e => e.toUpperCase())];
+  let resposta;
+  for (const extensao of extensoes) {
+    resposta = await fetch(CONFIG.ficheiroMapa + '.' + extensao);
+    if (resposta.status !== 404) break;
+  }
   if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
   const total = Number(resposta.headers.get('Content-Length'));
   if (!total || !resposta.body) return resposta.blob();
@@ -504,14 +528,13 @@ async function criarNiveis(base) {
   return lista;
 }
 
-// Abre o mapa a partir de um endereço ou de um ficheiro escolhido.
+// Abre o mapa da pasta media ou o ficheiro escolhido no painel.
 // O createImageBitmap descodifica a imagem sem prender a página.
-async function abrirMapa(origem) {
+async function abrirMapa(ficheiro) {
   const este = ++carregamentos, atual = () => este === carregamentos;
   try {
-    const blob = typeof origem === 'string'
-      ? await descarregar(origem, pct => { if (atual()) mostrarEstado('A carregar o mapa… ' + pct + '%'); })
-      : origem;
+    const blob = ficheiro
+      || await descarregarMapa(pct => { if (atual()) mostrarEstado('A carregar o mapa… ' + pct + '%'); });
     if (!atual()) return;
     mostrarEstado('A preparar o mapa…');
     const novosNiveis = await criarNiveis(await createImageBitmap(blob));
@@ -535,6 +558,61 @@ $('ficheiro').addEventListener('change', e => {
   if (ficheiro) abrirMapa(ficheiro);
 });
 
+// Créditos: notificação ao abrir o site, em baixo à direita (no telemóvel, a toda a largura).
+// O rato por cima, o dedo a tocar ou o foco do teclado seguram-na no ecrã.
+
+async function mostrarCreditos() {
+  const c = CONFIG.creditos;
+  const probabilidade = window.innerWidth > 700 ? c.probabilidadeComputador : c.probabilidadeTelemovel;
+  if (Math.random() >= probabilidade) return;
+  const caixa = document.importNode($('modeloCreditos').content, true).firstElementChild;
+  // Só entra com as imagens prontas, e numa aba em segundo plano espera que a abram
+  await Promise.all([...caixa.querySelectorAll('img')].map(img => img.decode().catch(() => {})));
+  while (document.hidden) await new Promise(r => document.addEventListener('visibilitychange', r, { once: true }));
+  $('palco').appendChild(caixa);
+  // No computador encolhe o que for preciso (até 60%) para não tapar o mapa enquadrado.
+  // Se o mapa ainda não chegou, conta com as dimensões do config.js.
+  if (window.innerWidth > 700) {
+    const largura = imagem ? imagem.width : CONFIG.larguraOriginal, altura = imagem ? imagem.height : CONFIG.alturaOriginal;
+    const v = enquadramento(largura, altura);
+    const livre = tela.getBoundingClientRect().width - 14 - 20 - (v.x + largura * v.escala);
+    if (caixa.offsetWidth > livre)
+      caixa.style.fontSize = parseFloat(getComputedStyle(caixa).fontSize) * Math.max(0.6, livre / caixa.offsetWidth) + 'px';
+  }
+
+  // No computador desliza da direita; no telemóvel, onde ocupa a largura toda, sobe
+  const quadros = { opacity: [0, 1] };
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
+    quadros.transform = [matchMedia('(max-width: 700px)').matches ? 'translateY(25%)' : 'translateX(15%)', 'none'];
+  const animacao = caixa.animate(quadros, { duration: c.segundosAnimacao * 1000, easing: 'ease-out', fill: 'both' });
+  // Conta a partir de agora, para os segundos parada não esticarem se a página estiver ocupada com o mapa
+  const fimParada = performance.now() + (c.segundosAnimacao + c.segundosParada) * 1000;
+  // A saída é a entrada ao contrário
+  let sobre = false, foco = false, toque = false, saindo = false, espera;
+  const sair = () => { saindo = true; animacao.reverse(); };
+  const agendarSaida = ms => { clearTimeout(espera); espera = setTimeout(sair, ms); };
+  const largar = () => {
+    if (sobre || foco || saindo) return;
+    agendarSaida(Math.max(fimParada - performance.now(), c.segundosDepoisDeLargar * 1000));
+  };
+  // Acabou de entrar, ou de voltar depois de lhe tocarem enquanto saía
+  animacao.onfinish = () => { if (saindo) caixa.remove(); else largar(); };
+  // Se lhe tocarem enquanto sai, volta
+  const segurar = () => {
+    clearTimeout(espera);
+    if (saindo) { saindo = false; animacao.reverse(); }
+  };
+  // No toque, o pointerenter vem antes de o dedo pousar e o pointerleave depois de o levantar
+  caixa.addEventListener('pointerenter', () => { sobre = true; segurar(); });
+  caixa.addEventListener('pointerleave', () => { sobre = false; largar(); });
+  // Tocar e segurar no telemóvel não abre o menu das ligações e das imagens
+  caixa.addEventListener('pointerdown', e => { toque = e.pointerType === 'touch'; });
+  caixa.addEventListener('contextmenu', e => { if (toque) e.preventDefault(); });
+  // Só conta o foco do teclado: um clique numa ligação não a deixa presa
+  caixa.addEventListener('focusin', e => { if (e.target.matches(':focus-visible')) { foco = true; segurar(); } });
+  caixa.addEventListener('focusout', () => { foco = false; largar(); });
+}
+
 // Textos do painel que dependem do config.js
 $('kmVidaReal').placeholder = '300';
 $('kmMapa').placeholder = formatoInteiro.format(300 * CONFIG.fatorVidaReal);
@@ -544,4 +622,6 @@ window.addEventListener('resize', redimensionar);
 // Se o navegador apagar a tela (por exemplo com a aba em segundo plano), volta a desenhar
 tela.addEventListener('contextrestored', desenhar);
 redimensionar();
-abrirMapa(CONFIG.ficheiroMapa);
+// Os créditos entram logo, sem esperar pelo mapa. Pedem as imagens primeiro, para não ficarem atrás dele.
+mostrarCreditos();
+abrirMapa();
