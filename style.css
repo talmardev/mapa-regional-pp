@@ -85,6 +85,14 @@ button:focus-visible,input:focus-visible,label.botao:focus-within,a:focus-visibl
 .voo-valor{display:block;font-family:"IM Fell English SC",Georgia,serif;font-size:32px;line-height:1.1}
 .voo-tempo small{display:block;margin-top:2px;color:var(--tinta-suave);font-size:13.5px}
 .voo-nota{margin:10px 0 0;color:var(--tinta-suave);font-size:13.5px}
+/* Companhias aéreas da rota (experiência): logo à esquerda, nome e país à direita */
+.companhias{margin-top:14px;padding-top:12px;border-top:1px solid var(--linha)}
+.companhias p{margin:0 0 8px;font-size:12.5px;font-weight:700;color:var(--tinta-suave)}
+.companhias ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.companhias li{display:grid;grid-template-columns:8.5em 1fr;align-items:center;gap:12px}
+.companhias img{display:block;width:100%;height:auto;aspect-ratio:auto 1134/301}
+.companhias strong{display:block;line-height:1.25}
+.companhias small{display:block;color:var(--tinta-suave);font-size:12.5px;line-height:1.3}
 
 #zoom{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:6px}
 #zoom button{width:40px;height:40px;border-radius:10px;border:2px solid var(--bronze);background:var(--painel);color:var(--tinta);font:700 20px/1 "Alegreya Sans",sans-serif;cursor:pointer}

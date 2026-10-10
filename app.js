@@ -277,6 +277,7 @@ function atualizar() {
     $('vooValor').textContent = formatarTempo(t.comprimento / kmhVoo);
     $('vooVelocidade').textContent = 'a ' + formatoInteiro.format(kmhVoo) + ' km/h de cruzeiro';
   }
+  mostrarCompanhias(voo && CONFIG.capitais[escolhaVoo.origem].nome, voo && CONFIG.capitais[escolhaVoo.destino].nome);
 
   const comViagem = modo === 'dist' && pontos.length > 1 && !voo;
   const grupo = CONFIG.velocidades[grupoViagem];
@@ -307,6 +308,30 @@ const capitais = CONFIG.capitais
 const meioVoo = CONFIG.velocidades.flatMap(g => g.meios).find(m => m.voo);
 const kmhVoo = meioVoo && meioVoo.kmh[0];
 if (!kmhVoo) $('caixaVoo').classList.add('escondido');
+
+// Companhias aéreas (experiência): servem as rotas da capital indicada e os pares listados
+const companhias = CONFIG.companhias || [];
+const servidaPor = (c, a, b) => c.capital === a || c.capital === b
+  || (c.rotas || []).some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+let companhiasMostradas = '';
+
+// Mostra as companhias da rota entre as capitais a e b (nomes); sem rota ou sem companhias, esconde o bloco
+function mostrarCompanhias(a, b) {
+  const lista = a ? companhias.filter(c => servidaPor(c, a, b)) : [];
+  $('vooCompanhias').classList.toggle('escondido', !lista.length);
+  const chave = lista.map(c => c.nome).join('|');
+  if (chave === companhiasMostradas) return;
+  companhiasMostradas = chave;
+  $('vooCompanhiasLista').replaceChildren(...lista.map(c => {
+    const li = document.createElement('li'), logo = document.createElement('img'), texto = document.createElement('div');
+    const nome = document.createElement('strong'), pais = document.createElement('small');
+    logo.src = c.logo; logo.alt = '';
+    nome.textContent = c.nome; pais.textContent = c.pais;
+    texto.append(nome, pais);
+    li.append(logo, texto);
+    return li;
+  }));
+}
 
 // Campo com pesquisa: escrever filtra a lista (sem acentos nem maiúsculas, na capital e no país),
 // as setas e o Enter escolhem e o Esc fecha. A lista não mostra a capital escolhida no outro campo.

@@ -48,6 +48,30 @@ const CONFIG = Object.freeze({
     { nome: 'Adarémia', pais: 'Astartia', x: 834, y: 3822 }
   ],
 
+  // Companhias aéreas (experiência), mostradas em "Rota servida por" na Viagem de avião.
+  // capital: serve todas as rotas que partem ou chegam a essa capital.
+  // rotas: outros pares de capitais que serve, em qualquer sentido (nomes como em capitais).
+  // Sem companhia na rota, o bloco não aparece. Para tirar a experiência, esvazia esta lista.
+  companhias: [
+    { nome: 'Air Libertalia', pais: 'New Libertalia Kingdom', logo: 'media/airlibertalialogo.png', capital: 'Faro', rotas: [] },
+    { nome: 'Wing', pais: 'New Libertalia Kingdom', logo: 'media/winglogo.png', capital: 'Faro', rotas: [
+      ['Vascotopia', 'Cidade de Olaria'], ['Vascotopia', 'Parapeito da Janela'], ['Vascotopia', 'Porto'],
+      ['Vascotopia', 'Jawadeen'], ['Vascotopia', 'Bregieira'], ['Vascotopia', 'Totar'],
+      ['Vascotopia', 'Felicitas Argos'], ['Vascotopia', 'Adarémia'], ['Cidade de Olaria', 'Jawadeen'],
+      ['Cidade de Olaria', 'Bufo-Real'], ['Cidade de Olaria', 'Adarémia'], ['Parapeito da Janela', 'Porto'],
+      ['Parapeito da Janela', 'Sanfins'], ['Parapeito da Janela', 'Bufo-Real'], ['Parapeito da Janela', 'Totar'],
+      ['Parapeito da Janela', 'Eolina'], ['Parapeito da Janela', 'Felicitas Argos'], ['Porto', 'Jawadeen'],
+      ['Porto', 'Bregieira'], ['Porto', 'Eolina'], ['Porto', 'Adarémia'],
+      ['Sanfins', 'Jawadeen'], ['Sanfins', 'Bregieira'], ['Sanfins', 'Bufo-Real'],
+      ['Sanfins', 'Totar'], ['Sanfins', 'Eolina'], ['Sanfins', 'Adarémia'],
+      ['Jawadeen', 'Bufo-Real'], ['Jawadeen', 'Totar'], ['Jawadeen', 'Felicitas Argos'],
+      ['Jawadeen', 'Adarémia'], ['Bregieira', 'Totar'], ['Bregieira', 'Felicitas Argos'],
+      ['Bregieira', 'Adarémia'], ['Bufo-Real', 'Totar'], ['Bufo-Real', 'Felicitas Argos'],
+      ['Totar', 'Eolina'], ['Totar', 'Adarémia'], ['Eolina', 'Adarémia'],
+      ['Felicitas Argos', 'Adarémia']
+    ] }
+  ],
+
   // Tempos de viagem, um grupo por botão.
   // kmDia para quem anda por dias, kmh para o resto: [cruzeiro] ou [cruzeiro, máxima].
   // porMar: avisa e pinta os troços que passam por terra.
