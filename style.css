@@ -66,7 +66,25 @@ button:focus-visible,input:focus-visible,label.botao:focus-within,a:focus-visibl
 
 .conversor{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .conversor label{font-size:12.5px;color:var(--tinta-suave);display:flex;flex-direction:column;gap:3px}
-.conversor input{width:100%;font:inherit;padding:7px 8px;border:1px solid var(--linha);border-radius:8px;background:var(--campo);color:var(--tinta)}
+.conversor input,.busca input{width:100%;font:inherit;padding:7px 8px;border:1px solid var(--linha);border-radius:8px;background:var(--campo);color:var(--tinta)}
+
+/* Viagem de avião: dois campos com pesquisa. A lista fica no fluxo, para o painel não a cortar. */
+.voo{display:grid;gap:8px}
+.campo{display:flex;flex-direction:column;gap:3px}
+.campo label{font-size:12.5px;color:var(--tinta-suave)}
+.busca input:disabled{opacity:.55;cursor:not-allowed}
+.lista{list-style:none;margin:4px 0 0;padding:3px;max-height:11.5em;overflow:auto;overscroll-behavior:contain;
+  background:var(--campo);border:1px solid var(--bronze);border-radius:8px}
+.lista li{padding:6px 8px;border-radius:6px;cursor:pointer}
+.lista li small{font-size:inherit;color:var(--tinta-suave)}
+.lista li:hover,.lista li.ativa{background:color-mix(in srgb,var(--bronze) 26%,var(--campo))}
+.lista li[aria-selected="true"]{font-weight:700}
+.lista li.vazio{cursor:default;color:var(--tinta-suave)}
+.lista li.vazio:hover{background:none}
+.voo-tempo{margin:12px 0 0;text-align:center}
+.voo-valor{display:block;font-family:"IM Fell English SC",Georgia,serif;font-size:32px;line-height:1.1}
+.voo-tempo small{display:block;margin-top:2px;color:var(--tinta-suave);font-size:13.5px}
+.voo-nota{margin:10px 0 0;color:var(--tinta-suave);font-size:13.5px}
 
 #zoom{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:6px}
 #zoom button{width:40px;height:40px;border-radius:10px;border:2px solid var(--bronze);background:var(--painel);color:var(--tinta);font:700 20px/1 "Alegreya Sans",sans-serif;cursor:pointer}
@@ -121,6 +139,6 @@ button:focus-visible,input:focus-visible,label.botao:focus-within,a:focus-visibl
   .creditos p{grid-column:1 / -1;margin:0}
   .grande{font-size:36px}
   /* Abaixo de 16px o iPhone faz zoom à página ao escrever */
-  .conversor input{font-size:16px}
+  .conversor input,.busca input{font-size:16px}
 }
 @media (prefers-reduced-motion:no-preference){.botao,.segmentos button{transition:background .15s}}

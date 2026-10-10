@@ -60,6 +60,29 @@
         <button class="botao principal" id="copiar">Copiar</button>
       </div>
     </section>
+    <section id="caixaVoo">
+      <h2>Viagem de avião</h2>
+      <div class="voo">
+        <div class="campo">
+          <label for="vooOrigem">Origem</label>
+          <div class="busca">
+            <input id="vooOrigem" type="text" role="combobox" autocomplete="off" autocapitalize="off" spellcheck="false"
+              aria-autocomplete="list" aria-expanded="false" aria-controls="vooOrigemLista" placeholder="Procura uma capital" disabled>
+            <ul id="vooOrigemLista" class="lista escondido" role="listbox" aria-label="Capitais de origem"></ul>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="vooDestino">Destino</label>
+          <div class="busca">
+            <input id="vooDestino" type="text" role="combobox" autocomplete="off" autocapitalize="off" spellcheck="false"
+              aria-autocomplete="list" aria-expanded="false" aria-controls="vooDestinoLista" placeholder="Procura uma capital" disabled>
+            <ul id="vooDestinoLista" class="lista escondido" role="listbox" aria-label="Capitais de destino"></ul>
+          </div>
+        </div>
+      </div>
+      <p id="vooTempo" class="voo-tempo escondido"><span class="voo-valor" id="vooValor"></span><small id="vooVelocidade"></small></p>
+      <p id="vooNota" class="voo-nota escondido"></p>
+    </section>
     <section id="caixaViagem" class="escondido">
       <h2>Tempo de Viagem</h2>
       <div class="segmentos" id="gruposViagem" role="group" aria-label="Grupo de meios"></div>

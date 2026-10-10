@@ -28,15 +28,36 @@ const CONFIG = Object.freeze({
     { nome: 'Indonésia', x: 90, y: 3927, largura: 3197, altura: 1251 }
   ],
 
+  // Capitais do continente (símbolo "Capital" da legenda), para a secção Viagem de avião.
+  // x e y: centro da estrela, em píxeis da imagem original (aparecem no canto inferior direito
+  // com o rato por cima). São as do mapa da pasta media, por isso numa edição nova há que as
+  // atualizar. As das caixas à parte (Taprobana e Angola) ficam de fora, porque não se mede entre zonas.
+  capitais: [
+    { nome: 'Vascotopia', pais: 'Samosil', x: 1507, y: 772 },
+    { nome: 'Cidade de Olaria', pais: 'Olarista', x: 1061, y: 883 },
+    { nome: 'Parapeito da Janela', pais: 'Kukinalia', x: 1695, y: 1489 },
+    { nome: 'Porto', pais: 'Caxina', x: 974, y: 1534 },
+    { nome: 'Sanfins', pais: 'Prtugal', x: 1036, y: 1668 },
+    { nome: 'Jawadeen', pais: 'Herya', x: 1506, y: 1858 },
+    { nome: 'Bregieira', pais: 'Ofiussia', x: 894, y: 2346 },
+    { nome: 'Faro', pais: 'New Libertalia Kingdom', x: 668, y: 2631 },
+    { nome: 'Bufo-Real', pais: 'Arquipélago das Corujas', x: 1641, y: 2934 },
+    { nome: 'Totar', pais: 'Totaristan', x: 1292, y: 2979 },
+    { nome: 'Eolina', pais: 'Eolina', x: 1296, y: 3737 },
+    { nome: 'Felicitas Argos', pais: 'Alentejo and Algarve', x: 1395, y: 3804 },
+    { nome: 'Adarémia', pais: 'Astartia', x: 834, y: 3822 }
+  ],
+
   // Tempos de viagem, um grupo por botão.
   // kmDia para quem anda por dias, kmh para o resto: [cruzeiro] ou [cruzeiro, máxima].
   // porMar: avisa e pinta os troços que passam por terra.
+  // voo: a secção Viagem de avião usa a velocidade de cruzeiro deste meio.
   velocidades: [
     { grupo: 'Civis', meios: [
       { nome: 'A pé', kmDia: [30] },
       { nome: 'Carro', kmh: [90] },
       { nome: 'Comboio', kmh: [120, 300] },
-      { nome: 'Avião', kmh: [800, 900] }
+      { nome: 'Avião', kmh: [800, 900], voo: true }
     ] },
     { grupo: 'Mar', porMar: true, meios: [
       { nome: 'Cargueiro', kmh: [37, 46] },

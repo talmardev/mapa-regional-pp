@@ -1,5 +1,5 @@
-// Mapa Regional++: mapa, medições e conversor.
-// As escalas e as caixas vêm do config.js.
+// Mapa Regional++: mapa, medições, viagem de avião e conversor.
+// As escalas, as caixas e as capitais vêm do config.js.
 
 const tela = document.getElementById('mapa'), contexto = tela.getContext('2d');
 let imagem = null;              // mapa carregado (ImageBitmap)
@@ -14,6 +14,8 @@ let avisoZona = '';             // aviso quando um ponto é recusado por estar n
 let grupoViagem = 0;            // índice em CONFIG.velocidades
 let emTerra = [];               // índices dos troços por mar que passam por terra
 let mascaraMar = null;          // null: por fazer; false: não deu para ler a imagem
+let capitaisPontos = [];        // capitais em píxeis da imagem carregada, pela ordem do config.js
+let escolhaVoo = { origem: null, destino: null };   // índices em CONFIG.capitais escolhidos em Viagem de avião
 
 const formatoInteiro = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 0 });
 const formatoDecimal = new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -250,11 +252,15 @@ function totais() {
 }
 
 function atualizar() {
+  sincronizarVoo();
   const t = totais();
   const grande = $('valorGrande'), sub = $('valorSub');
+  const comCapitais = escolhaVoo.origem !== null || escolhaVoo.destino !== null;
+  const voo = escolhaVoo.origem !== null && escolhaVoo.destino !== null;
   if (modo === 'dist') {
     grande.innerHTML = formatoInteiro.format(t.comprimento) + '<small>km</small>';
-    sub.textContent = pontos.length === 0 ? 'Clica no mapa para marcar o primeiro ponto.'
+    sub.textContent = comCapitais ? textoVoo()
+      : pontos.length === 0 ? 'Clica no mapa para marcar o primeiro ponto.'
       : pontos.length === 1 ? 'Agora clica no segundo ponto.'
       : pontos.length + ' pontos. Continua a clicar para fazer um percurso.';
   } else {
@@ -265,7 +271,14 @@ function atualizar() {
   $('aviso').textContent = avisoZona;
   $('aviso').classList.toggle('escondido', !avisoZona);
 
-  const comViagem = modo === 'dist' && pontos.length > 1;
+  // Com as duas capitais escolhidas, a secção Viagem de avião mostra o tempo e o Tempo de Viagem esconde-se
+  $('vooTempo').classList.toggle('escondido', !voo);
+  if (voo) {
+    $('vooValor').textContent = formatarTempo(t.comprimento / kmhVoo);
+    $('vooVelocidade').textContent = 'a ' + formatoInteiro.format(kmhVoo) + ' km/h de cruzeiro';
+  }
+
+  const comViagem = modo === 'dist' && pontos.length > 1 && !voo;
   const grupo = CONFIG.velocidades[grupoViagem];
   const viagem = $('viagem');
   viagem.innerHTML = '';
@@ -282,6 +295,196 @@ function atualizar() {
   emTerra = comViagem && grupo.porMar ? trocosEmTerra() : [];
   $('avisoMar').classList.toggle('escondido', !emTerra.length);
   pedirDesenho();
+}
+
+// Viagem de avião: origem e destino entre as capitais do config.js
+
+const normalizar = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// Por ordem alfabética; i é o índice da capital no config.js
+const capitais = CONFIG.capitais
+  .map((c, i) => ({ ...c, i, rotulo: c.nome + ' (' + c.pais + ')', busca: normalizar(c.nome + ' ' + c.pais) }))
+  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+const meioVoo = CONFIG.velocidades.flatMap(g => g.meios).find(m => m.voo);
+const kmhVoo = meioVoo && meioVoo.kmh[0];
+if (!kmhVoo) $('caixaVoo').classList.add('escondido');
+
+// Campo com pesquisa: escrever filtra a lista (sem acentos nem maiúsculas, na capital e no país),
+// as setas e o Enter escolhem e o Esc fecha. A lista não mostra a capital escolhida no outro campo.
+function criarBusca(entrada, lista, aoEscolher) {
+  let escolhida = null, excluida = null, visiveis = [], ativa = -1, filtrar = false, toque = false, selecionarJa = false;
+  const aberta = () => !lista.classList.contains('escondido');
+  const comecaPor = (c, p) => c.busca.split(' ').some(w => w.startsWith(p)) ? 0 : 1;
+
+  function desenharLista() {
+    const consulta = filtrar ? normalizar(entrada.value).split(' ').filter(Boolean) : [];
+    visiveis = capitais.filter(c => c.i !== excluida && consulta.every(p => c.busca.includes(p)));
+    // As que começam pelo que se escreveu vêm primeiro
+    if (consulta.length) visiveis.sort((a, b) => comecaPor(a, consulta[0]) - comecaPor(b, consulta[0]));
+    lista.replaceChildren();
+    visiveis.forEach(c => {
+      const li = document.createElement('li'), pais = document.createElement('small');
+      pais.textContent = '(' + c.pais + ')';
+      li.append(c.nome + ' ', pais);
+      li.id = lista.id + '-' + c.i; li.dataset.i = c.i;
+      li.setAttribute('role', 'option'); li.setAttribute('aria-selected', c === escolhida);
+      lista.appendChild(li);
+    });
+    if (!visiveis.length) {
+      const li = document.createElement('li');
+      li.className = 'vazio'; li.textContent = 'Nenhuma capital encontrada';
+      lista.appendChild(li);
+    }
+    ativa = filtrar ? (visiveis.length ? 0 : -1) : visiveis.indexOf(escolhida);
+  }
+
+  // Marca a opção ativa e rola a lista o mínimo para a mostrar
+  function marcarAtiva() {
+    [...lista.children].forEach((li, k) => li.classList.toggle('ativa', k === ativa));
+    const li = lista.children[ativa];
+    if (!li) { entrada.removeAttribute('aria-activedescendant'); return; }
+    entrada.setAttribute('aria-activedescendant', li.id);
+    const o = li.getBoundingClientRect(), l = lista.getBoundingClientRect();
+    if (o.top < l.top) lista.scrollTop -= l.top - o.top;
+    else if (o.bottom > l.bottom) lista.scrollTop += o.bottom - l.bottom;
+  }
+
+  function abrir() {
+    if (entrada.disabled || aberta()) return;
+    desenharLista();
+    lista.classList.remove('escondido');
+    entrada.setAttribute('aria-expanded', 'true');
+    marcarAtiva();
+    // Rola o painel para a lista ficar à vista, sem tirar o campo do ecrã
+    const p = $('painel'), pr = p.getBoundingClientRect(), falta = lista.getBoundingClientRect().bottom - pr.bottom;
+    if (falta > 0) p.scrollTop += Math.min(falta + 8, Math.max(0, entrada.getBoundingClientRect().top - pr.top - 40));
+  }
+
+  function fechar() {
+    lista.classList.add('escondido');
+    entrada.setAttribute('aria-expanded', 'false');
+    entrada.removeAttribute('aria-activedescendant');
+    filtrar = false;
+  }
+
+  function escolher(c, pelaLista) {
+    escolhida = c; entrada.value = c.rotulo;
+    fechar();
+    if (pelaLista) entrada.blur();
+    aoEscolher(c);
+  }
+
+  // Ao sair do campo: um nome certo escolhe a capital, um campo vazio limpa-a, o resto volta ao que estava
+  function confirmar() {
+    const texto = normalizar(entrada.value);
+    if (!texto) {
+      if (escolhida) { escolhida = null; aoEscolher(null); }
+    } else {
+      const certa = capitais.find(c => c.i !== excluida && (normalizar(c.rotulo) === texto || normalizar(c.nome) === texto));
+      if (certa && certa !== escolhida) { escolhida = certa; aoEscolher(certa); }
+    }
+    entrada.value = escolhida ? escolhida.rotulo : '';
+  }
+
+  entrada.addEventListener('pointerdown', e => { toque = e.pointerType === 'touch'; });
+  // Com o rato ou o teclado, o foco seleciona o texto para se poder escrever por cima
+  entrada.addEventListener('focus', () => { if (!toque) { selecionarJa = true; entrada.select(); } abrir(); });
+  // Sem isto, o rato a largar desfazia a seleção que o foco acabou de fazer
+  entrada.addEventListener('mouseup', e => { if (selecionarJa) { e.preventDefault(); selecionarJa = false; } });
+  entrada.addEventListener('click', abrir);
+  entrada.addEventListener('input', () => {
+    filtrar = true;
+    if (aberta()) { desenharLista(); marcarAtiva(); } else abrir();
+  });
+  entrada.addEventListener('blur', () => { selecionarJa = false; fechar(); confirmar(); });
+  entrada.addEventListener('keydown', e => {
+    selecionarJa = false;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!aberta()) { abrir(); return; }
+      const passo = e.key === 'ArrowDown' ? 1 : -1, n = visiveis.length;
+      if (!n) return;
+      ativa = ativa < 0 ? (passo > 0 ? 0 : n - 1) : (ativa + passo + n) % n;
+      marcarAtiva();
+    } else if (e.key === 'Enter' && aberta() && visiveis[ativa]) {
+      e.preventDefault();
+      escolher(visiveis[ativa], false);
+    } else if (e.key === 'Escape' && aberta()) {
+      e.preventDefault();
+      entrada.value = escolhida ? escolhida.rotulo : '';
+      fechar();
+    }
+  });
+  // Clicar numa opção não tira o foco do campo
+  lista.addEventListener('mousedown', e => e.preventDefault());
+  lista.addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]');
+    if (li) escolher(capitais.find(c => c.i === Number(li.dataset.i)), true);
+  });
+
+  return {
+    // Repõe a escolha sem avisar quem chamou
+    definir(c) { escolhida = c; entrada.value = c ? c.rotulo : ''; if (aberta()) { desenharLista(); marcarAtiva(); } },
+    // A capital escolhida no outro campo não aparece nesta lista
+    excluir(i) { excluida = i; if (aberta()) { desenharLista(); marcarAtiva(); } },
+    ativar(sim) { entrada.disabled = !sim; if (!sim) fechar(); }
+  };
+}
+
+const vooBuscas = {
+  origem: criarBusca($('vooOrigem'), $('vooOrigemLista'), c => escolherVoo('origem', c)),
+  destino: criarBusca($('vooDestino'), $('vooDestinoLista'), c => escolherVoo('destino', c))
+};
+
+// Escolher capitais passa a medir por elas: os pontos do mapa são os delas
+function escolherVoo(lado, c) {
+  escolhaVoo[lado] = c ? c.i : null;
+  vooBuscas.origem.excluir(escolhaVoo.destino);
+  vooBuscas.destino.excluir(escolhaVoo.origem);
+  pontos = [escolhaVoo.origem, escolhaVoo.destino].filter(i => i !== null).map(i => capitaisPontos[i]);
+  avisoZona = '';
+  if (pontos.length === 2) enquadrarPontos(pontos);
+  if (modo !== 'dist') definirModo('dist'); else atualizar();
+}
+
+// A escolha só vale enquanto os pontos do mapa forem exatamente os das capitais escolhidas.
+// Clicar no mapa, arrastar uma ponta, desfazer, limpar ou mudar de modo larga-a e volta a medição normal.
+function sincronizarVoo() {
+  const esperados = [escolhaVoo.origem, escolhaVoo.destino].filter(i => i !== null).map(i => capitaisPontos[i]);
+  if (!esperados.length) return;
+  if (modo === 'dist' && pontos.length === esperados.length && esperados.every((p, k) => pontos[k] === p)) return;
+  limparVoo();
+}
+
+function limparVoo() {
+  escolhaVoo = { origem: null, destino: null };
+  Object.values(vooBuscas).forEach(b => { b.definir(null); b.excluir(null); });
+}
+
+// As capitais são as do mapa da pasta media: com outra edição carregada a secção fica desligada
+function ativarVoo(sim) {
+  Object.values(vooBuscas).forEach(b => b.ativar(sim));
+  $('vooNota').textContent = sim ? '' : 'As capitais são da edição atual do mapa, por isso esta secção só funciona com ela.';
+  $('vooNota').classList.toggle('escondido', sim);
+}
+
+function textoVoo() {
+  const nome = i => CONFIG.capitais[i].nome, { origem, destino } = escolhaVoo;
+  if (origem !== null && destino !== null) return nome(origem) + ' → ' + nome(destino);
+  return origem !== null ? 'Origem: ' + nome(origem) + '. Escolhe o destino.' : 'Destino: ' + nome(destino) + '. Escolhe a origem.';
+}
+
+// Se os pontos não couberem à vista, centra-os (e só afasta o mapa se for preciso)
+function enquadrarPontos(ps) {
+  const ret = tela.getBoundingClientRect(), largo = window.innerWidth > 700;
+  const x0 = (largo ? 360 : 0) + 30, x1 = ret.width - 70;
+  const y0 = 30, y1 = ret.height - (largo ? 0 : $('painel').getBoundingClientRect().height) - 30;
+  if (x1 <= x0 || y1 <= y0) return;
+  if (ps.map(paraEcra).every(p => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1)) return;
+  const xs = ps.map(p => p.x), ys = ps.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  vista.escala = Math.max(escalaMinima, Math.min(vista.escala, (x1 - x0) / Math.max(maxX - minX, 1), (y1 - y0) / Math.max(maxY - minY, 1)));
+  vista.x = (x0 + x1) / 2 - (minX + maxX) / 2 * vista.escala;
+  vista.y = (y0 + y1) / 2 - (minY + maxY) / 2 * vista.escala;
 }
 
 // Interação com o rato e o toque
@@ -543,6 +746,9 @@ async function abrirMapa(ficheiro) {
     niveis = novosNiveis; imagem = niveis[0];
     fator = CONFIG.larguraOriginal / imagem.width;
     mascaraMar = null;
+    capitaisPontos = CONFIG.capitais.map(c => ({ x: c.x * imagem.width / CONFIG.larguraOriginal, y: c.y * imagem.height / CONFIG.alturaOriginal }));
+    limparVoo();
+    ativarVoo(!ficheiro);
     escreverEscala();
     $('estado').classList.add('escondido');
     pontos = []; avisoZona = '';
