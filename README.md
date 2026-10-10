@@ -24,6 +24,14 @@ No grupo **Mar**, marca o percurso pela água com vários pontos, a contornar a 
 
 ![Percurso por mar de Odeceixe a Saudoso, marcado com vários pontos a contornar a costa](media/caminhomar.png)
 
+### Viagem de avião entre capitais (beta)
+
+A Viagem de avião e as companhias aéreas são novidades ainda em **beta**, por isso podem mudar.
+
+Na secção **Viagem de avião**, escolhe a **Origem** e o **Destino** entre as capitais do continente (as cidades com a estrela da legenda). Escreve para pesquisar: a pesquisa ignora acentos e maiúsculas e cada opção mostra o país entre parênteses, por exemplo "Porto (Caxina)". A linha traça-se sozinha no mapa, os km aparecem no número grande e a secção mostra o tempo de voo à velocidade de cruzeiro do avião. Se clicares no mapa, arrastares um ponto ou desfizeres, a escolha das capitais limpa-se e volta a medição normal.
+
+Por baixo do tempo aparece **Rota servida por (beta)**, uma experiência com as companhias aéreas que servem a rota, cada uma com o logo, o nome e o país. Por agora há só a Air Libertalia e a Wing, e nem todas as rotas têm companhia: quando nenhuma serve a rota, o bloco não aparece.
+
 ### Medir uma área
 
 Escolhe **Área** e marca pelo menos 3 pontos à volta da zona. O painel mostra a área em km² e o perímetro.
@@ -57,7 +65,7 @@ Funciona da mesma forma: toca para marcar pontos, usa dois dedos para aproximar 
 
 ### Ver outra edição do mapa
 
-**Carregar outra edição do mapa**, no fim do painel, abre uma imagem do mapa guardada no teu dispositivo, por exemplo uma edição antiga. Só muda o que tu vês: o site continua igual para os outros.
+**Carregar outra edição do mapa**, no fim do painel, abre uma imagem do mapa guardada no teu dispositivo, por exemplo uma edição antiga. Só muda o que tu vês: o site continua igual para os outros. Com outra edição, a secção Viagem de avião fica desligada, porque as capitais são as do mapa do site.
 
 ## Secção técnica
 
@@ -65,8 +73,8 @@ HTML, CSS e JavaScript puro, sem dependências nem compilação, feito para o Gi
 
 - `index.html`: estrutura da página e modelo da notificação dos créditos.
 - `style.css`: aspeto da página, incluindo a versão para telemóvel.
-- `config.js`: tudo o que pode mudar (escalas, dimensões do mapa, caixas, velocidades, cor do mar e créditos).
-- `app.js`: mapa, medições, tempos de viagem, conversor e créditos.
+- `config.js`: tudo o que pode mudar (escalas, dimensões do mapa, caixas, capitais, companhias aéreas, velocidades, cor do mar e créditos).
+- `app.js`: mapa, medições, tempos de viagem, viagem de avião, conversor e créditos.
 - `media/`: o mapa e todas as imagens do site.
 
 ### Escalas
@@ -82,6 +90,7 @@ Métricas oficiais do grupo:
 
 1. Põe o novo ficheiro com o nome `mapa` na pasta `media/` e apaga o antigo. Pode ser `jpg`, `jpeg`, `png`, `webp`, `avif` ou `jfif`; se houver mais do que um, o site usa o primeiro desta lista.
 2. Se o tamanho ou a disposição do mapa mudarem, atualiza `larguraOriginal`, `alturaOriginal` e `caixas` no `config.js`.
+3. Atualiza a lista `capitais` no `config.js`: o `x` e o `y` de cada uma são o centro da estrela no mapa, que aparece no canto inferior direito com o rato por cima. As capitais das caixas à parte ficam de fora, porque não se mede entre zonas. As `rotas` das `companhias` usam os nomes das capitais, por isso se mudares um nome, muda-o lá também.
 
 ### Licença
 
